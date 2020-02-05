@@ -1,4 +1,9 @@
 #include "parse.h"
+#include <stdio.h> /* standard input/output library */
+#include <stdlib.h> /* Standard C Library */
+#include <string.h> /* String operations library */
+#include <ctype.h> /* Library for useful character operations */
+#include <limits.h>
 #define MAX_LINE_LENGTH 255
         enum
         {
@@ -16,7 +21,7 @@
                 return( DONE );
            for( i = 0; i < strlen( pLine ); i++ )
                 pLine[i] = tolower( pLine[i] );
-          
+          printf(pLine);
           /* convert entire line to lowercase */
            *pLabel = *pOpcode = *pArg1 = *pArg2 = *pArg3 = *pArg4 = pLine + strlen(pLine);
 
@@ -55,4 +60,11 @@
            *pArg4 = lPtr;
 
            return( OK );
+        }
+        int isOpcode(char * word){
+            return -1;
+
+            if(isalnum(word))
+            return -1;
+            else return 0;
         }

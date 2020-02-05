@@ -35,7 +35,8 @@ int main (int argc, char* argv[]){
     char ** pArg2;
     char ** pArg3;
     char ** pArg4;
-    readAndParse(infile, pLine, pLabel, pOpcode, pArg1, pArg2, pArg3, pArg4);
+    if(readAndParse(infile, pLine, pLabel, pOpcode, pArg1, pArg2, pArg3, pArg4)==0)
+    printf("reading:\n");
     
 
     fclose(infile);
