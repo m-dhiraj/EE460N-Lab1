@@ -1,0 +1,4 @@
+.orig
+kolbe add r1 r2 r3
+and r1 x08
+.end
