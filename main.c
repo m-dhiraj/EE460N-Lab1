@@ -11,11 +11,12 @@ FILE* outfile = NULL;
 
 enum
 {
-    DONE, OK, EMPTY_LINE
+    DONE, OK, EMPTY_LINE, PSEUDO, ORIG, END
 };
 
 int readAndParse( FILE * pInfile, char * pLine, char ** pLabel, char ** pOpcode, char ** pArg1, char ** pArg2, char ** pArg3, char ** pArg4);
 int isOpcode(char * word);
+int psuedoOp(char* word, char* arg, int* lCount);
 
 #define MAX_LABEL_LEN 20
 #define MAX_SYMBOLS 255
@@ -43,19 +44,27 @@ int main (int argc, char* argv[]){
     /* Do stuff with files */
     char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1, *lArg2, *lArg3, *lArg4;
     int parseRet;
-    int lCount=0;
+    int lCount=1;
+    do
+    {
+        parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
+        if(parseRet==PSEUDO)
+            parseRet=psuedoOp(lOpcode,lArg1,&lCount);
+    } while (parseRet!=ORIG);
+    printf("%s \n",lLine);
     do{
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-        if(parseRet!=DONE && parseRet!=EMPTY_LINE){
-            //fprintf(outfile, "%d",count);
-            //fprintf(outfile,lLabel);
+        if(parseRet!=DONE && parseRet!=EMPTY_LINE && parseRet!=PSEUDO){
             TableEntry t;
             t.address=lCount;
             strcpy(t.label,lLabel);
             symbolTable[lCount]=t;
             lCount++;
         }
-    }while (parseRet!=DONE);
+        printf("op code: %s ",lOpcode);
+        printf("arg1: %s \n",lArg1);
+    }while (parseRet!=PSEUDO);
+    //printf("\n%s \n",lLine);
 
     int i;
     for(i=0;i<lCount;i++){
@@ -91,6 +100,15 @@ int readAndParse( FILE * pInfile, char * pLine, char ** pLabel, char ** pOpcode,
     *lPtr = '\0';
     if( !(lPtr = strtok( pLine, "\t\n ," ) ) )
         return( EMPTY_LINE );
+    
+    //
+    if(lPtr[0]=='.'){
+        *pOpcode=lPtr;
+        if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( PSEUDO );
+        *pArg1 = lPtr;
+        return(PSEUDO);
+    }
+    //
 
     if( isOpcode( lPtr ) == -1 && lPtr[0] != '.' ) /* found a label */
     {
@@ -162,4 +180,12 @@ int isOpcode(char * word){
         return 1;
     
     return -1;
+}
+
+int psuedoOp(char* word, char* arg, int* lCount){
+    if(strcmp(word,".orig")==0){
+        *lCount=atoi(arg);
+        return ORIG;
+    }
+    return PSEUDO;
 }
