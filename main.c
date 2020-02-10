@@ -3,7 +3,7 @@
 #include <string.h> /* String operations library */
 #include <ctype.h> /* Library for useful character operations */
 #include <limits.h> /* Library for definitions of common variable type characteristics */
-
+#include <math.h>
 #define MAX_LINE_LENGTH 255
 
 FILE* infile = NULL;
@@ -204,12 +204,37 @@ int psuedoOp(char* word, char* arg, int* lCount){
 
 int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4){
     int ans=-1;
+    
     if(isOpcode(word)==ADD||isOpcode(word)==AND||isOpcode(word)==XOR){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)>0)){
             if(pArg1[0]=='r'&&pArg2[0]=='r'){
                 if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
-                    if(((pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8))||(toNum(pArg3)<16&&toNum(pArg3)>-17))
-                        ans=1;
+                    if(((pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8))||(toNum(pArg3)<16&&toNum(pArg3)>-17)){
+                            if(isOpcode(word)==ADD){
+                                ans=0x1000;
+                            }
+                            else if(isOpcode(word)==AND){
+                                ans=0x5000;
+                            }
+                            else if(isOpcode(word)==XOR){
+                                ans=0x9000;
+                            }
+                            int add=pArg1[1] - '0';
+                                add*=512;
+                                ans+=add;
+                            add=pArg2[1] - '0';
+                                add*=64;
+                                ans+=add;
+                            if((pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8)){
+                                   add=pArg3[1] - '0';
+                                   ans+=add;
+                                }
+                            else{
+                                    ans+=0x0020;
+                                    ans+=toNum(pArg3);
+                                }
+                            
+                        }
             }
         }
     }
@@ -331,3 +356,4 @@ toNum( char * pStr )
         exit(4);  /* This has been changed from error code 3 to error code 4, see clarification 12 */
   }
 }
+
