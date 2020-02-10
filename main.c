@@ -32,6 +32,15 @@ typedef struct {
 	char label[MAX_LABEL_LEN + 1];
 } TableEntry;
 TableEntry symbolTable[MAX_SYMBOLS];
+typedef struct {
+	int line;
+    char* label;
+    char* OpCode;
+    char* Arg1;
+    char* Arg2;
+    char* Arg3;
+    char* Arg4;
+} Command;
 
 int main (int argc, char* argv[]){
     // infile = fopen("kolbe.txt", "r");
@@ -51,33 +60,44 @@ int main (int argc, char* argv[]){
     /* Do stuff with files */
     char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1, *lArg2, *lArg3, *lArg4;
     int parseRet;
-    int lCount=1;
+    int lineCount=-1;
     do
     {
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(parseRet==PSEUDO)
-            parseRet=psuedoOp(lOpcode,lArg1,&lCount);
+            parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
+        if(parseRet==DONE)
+            return(-1);//some error
     } while (parseRet!=ORIG);
+       
+    //By here we have established a .orig
+    int lCount=lineCount;
     do{
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(parseRet!=DONE && parseRet!=EMPTY_LINE && parseRet!=PSEUDO){
             TableEntry t;
-            t.address=lCount;
+            t.address=lineCount;
             strcpy(t.label,lLabel);
-            symbolTable[lCount]=t;
+            symbolTable[lineCount]=t;
             lCount+=2;
-            printf("OPCODE:%d\n", isOpcode(lOpcode));
+            printf("OPCODE:%d\n", isOpcode(lOpcode));//DEBUG
         }
-        //printf("op code: %s ",lOpcode);
-        //printf("arg1: %s \n",lArg1);
-    }while (parseRet!=PSEUDO);
+        if(parseRet==PSEUDO)
+            parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
+        if(parseRet==DONE)
+            return(-1);
+    }while (parseRet!=END);
+    //now we have established a symbol table
+    rewind(infile);
+    lCount=lineCount;
+    //time to decode instructions
     do{
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(parseRet!=DONE && parseRet!=EMPTY_LINE && parseRet!=PSEUDO){
+            Command command;
+            command.line
             isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4);
         }
-        //printf("op code: %s ",lOpcode);
-        //printf("arg1: %s \n",lArg1);
     }while (parseRet!=PSEUDO);
     //printf("\n%s \n",lLine);
 
