@@ -1,4 +1,4 @@
-final: main.o
-	gcc -otest main.o 
-main: main.c BST312.h kolbe.txt
+inal: main.o
+	gcc  -otest main.o 
+main: main.c  kolbe.txt
 	gcc -c main.c

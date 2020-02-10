@@ -1,0 +1,5 @@
+.orig
+kolbe add r1 r7 r3
+and r1 r2 r3 r4
+dhiraj or r2 r3
+.end
