@@ -80,6 +80,13 @@ int main (int argc, char* argv[]){
     }while (parseRet!=END);
     //now we have established a symbol table
     rewind(infile);
+    do{
+        parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
+        if(parseRet==PSEUDO)
+            parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
+        if(parseRet==DONE)
+            return(-1);//some error
+    } while (parseRet!=ORIG);
     lCount=lineCount;
     //time to decode instructions
     do{
@@ -87,7 +94,12 @@ int main (int argc, char* argv[]){
         if(parseRet!=DONE && parseRet!=EMPTY_LINE && parseRet!=PSEUDO){
             isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4);
         }
-    }while (parseRet!=PSEUDO);
+        if(parseRet==PSEUDO)
+            parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
+        if(parseRet==PSEUDO){
+            //.fill
+        }
+    }while (parseRet!=END);
     
     fclose(infile);
     fclose(outfile);
@@ -107,8 +119,7 @@ int readAndParse( FILE * pInfile, char * pLine, char ** pLabel, char ** pOpcode,
     /* ignore the comments */
     lPtr = pLine;
 
-    while( *lPtr != ';' && *lPtr != '\0' &&
-    *lPtr != '\n' )
+    while( *lPtr != ';' && *lPtr != '\0' && *lPtr != '\n' )
         lPtr++;
 
     *lPtr = '\0';
@@ -118,7 +129,8 @@ int readAndParse( FILE * pInfile, char * pLine, char ** pLabel, char ** pOpcode,
     //
     if(lPtr[0]=='.'){
         *pOpcode=lPtr;
-        if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( PSEUDO );
+        if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) 
+            return( PSEUDO );
         *pArg1 = lPtr;
         return(PSEUDO);
     }
@@ -129,7 +141,13 @@ int readAndParse( FILE * pInfile, char * pLine, char ** pLabel, char ** pOpcode,
         *pLabel = lPtr;
         if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
     }
-    if(pLine[0]!='.')
+    if(pLine[0]=='.'){
+        *pOpcode = lPtr;
+        if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) 
+            return (PSEUDO);
+        *pArg1 = lPtr;
+        return (PSEUDO);
+    }
     *pOpcode = lPtr;
 
     if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
@@ -197,7 +215,10 @@ int isOpcode(char * word){
 int psuedoOp(char* word, char* arg, int* lCount){
     if(strcmp(word,".orig")==0){
         *lCount=atoi(arg);
-        return ORIG;
+        return (ORIG);
+    }
+    if(strcmp(word,".end")==0){
+        return (END);
     }
     return PSEUDO;
 }
