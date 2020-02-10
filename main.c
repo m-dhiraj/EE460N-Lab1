@@ -32,15 +32,6 @@ typedef struct {
 	char label[MAX_LABEL_LEN + 1];
 } TableEntry;
 TableEntry symbolTable[MAX_SYMBOLS];
-typedef struct {
-	int line;
-    char* label;
-    char* OpCode;
-    char* Arg1;
-    char* Arg2;
-    char* Arg3;
-    char* Arg4;
-} Command;
 
 int main (int argc, char* argv[]){
     // infile = fopen("kolbe.txt", "r");
@@ -94,22 +85,10 @@ int main (int argc, char* argv[]){
     do{
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(parseRet!=DONE && parseRet!=EMPTY_LINE && parseRet!=PSEUDO){
-            Command command;
-            command.line
             isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4);
         }
     }while (parseRet!=PSEUDO);
-    //printf("\n%s \n",lLine);
-
-    //int i;
-    // for(i=0;i<lCount;i++){
-    //     if(strlen(symbolTable[i].label)!=0){
-    //         printf("%d",symbolTable[i].address);
-    //         printf(symbolTable[i].label);
-    //         printf("\n");
-    //     }
-    // }
-
+    
     fclose(infile);
     fclose(outfile);
 }
@@ -226,32 +205,31 @@ int psuedoOp(char* word, char* arg, int* lCount){
 int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4){
     int ans=-1;
     if(isOpcode(word)==ADD||isOpcode(word)==AND||isOpcode(word)==XOR){
-        if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)>0))
-            {
-                if(pArg1[0]=='r'&&pArg2[0]=='r')
-                {
-                    if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
-                        if(((pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8))||(toNum(pArg3)<16&&toNum(pArg3)>-17))
+        if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)>0)){
+            if(pArg1[0]=='r'&&pArg2[0]=='r'){
+                if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
+                    if(((pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8))||(toNum(pArg3)<16&&toNum(pArg3)>-17))
                         ans=1;
-                }
             }
+        }
     }
     if(isOpcode(word)==BR||isOpcode(word)==JSR){
-        if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0))
-        for(int i=0;i<sizeof(symbolTable);i++)
-        {
-            if(strcmp(symbolTable[i].label,pArg1)==0)
-                ans=1;
+        if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
+            int i;
+            for(i=0;i<sizeof(symbolTable);i++){
+                if(strcmp(symbolTable[i].label,pArg1)==0)
+                    ans=1;
+            }
         }
     }
     if(isOpcode(word)==RET||isOpcode(word)==RTI){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0))
-        ans=1;
+            ans=1;
     }
     if(isOpcode(word)==JSRR){
         if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
             if(((pArg1[0]=='r')&&((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)))
-            ans=1;
+                ans=1;
         }
     }
     if(isOpcode(word)==LDB||isOpcode(word)==LDW||isOpcode(word)==STB||isOpcode(word)==STW){
@@ -261,27 +239,26 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                 {
                     if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
                         if((toNum(pArg3)<32&&toNum(pArg3)>-33))
-                        ans=1;
+                            ans=1;
                 }
             }
     }
     if(isOpcode(word)==LEA){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)>0)&&(strlen(pArg3)==0)){
             if(((pArg1[0]=='r')&&((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8))){
-                for(int i=0;i<sizeof(symbolTable);i++)
-                    {
-                        if(strcmp(symbolTable[i].label,pArg2)==0)
-                            ans=1;
-                    }
+                int i;
+                for(i=0;i<sizeof(symbolTable);i++){
+                    if(strcmp(symbolTable[i].label,pArg2)==0)
+                        ans=1;
+                }
             }
         }
     }
     if(isOpcode(word)==NOT){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)==0)){
-            if(((pArg1[0]=='r')&&((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)))
-            {
+            if(((pArg1[0]=='r')&&((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8))){
                 if(((pArg2[0]=='r')&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8)))
-                ans=1;
+                    ans=1;
             }
         }
     }
