@@ -15,7 +15,7 @@ enum
 };
 enum
 {
-    ADD, AND, BR, JMP, JSR, JSRR, LDB,
+    ADD, AND, BRn, BRz, BRp, BRnz, BRnp, BRzp, BR, BRnzp, JMP, JSR, JSRR, LDB,
     LDW, LEA, NOT, RET, RTI, LSHF, RSHFL, RSHFA,
     STB, STW, TRAP, XOR, HALT, NOP
 };
@@ -23,8 +23,10 @@ enum
 int readAndParse( FILE * pInfile, char * pLine, char ** pLabel, char ** pOpcode, char ** pArg1, char ** pArg2, char ** pArg3, char ** pArg4);
 int isOpcode(char * word);
 int psuedoOp(char* word, char* arg, int* lCount);
-int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4);
+int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4, int address);
 int toNum( char * pStr );
+int labelExists(char* label);
+int brChecker(char* branch);
 #define MAX_LABEL_LEN 20
 #define MAX_SYMBOLS 255
 typedef struct {
@@ -34,10 +36,10 @@ typedef struct {
 TableEntry symbolTable[MAX_SYMBOLS];
 
 int main (int argc, char* argv[]){
-    // infile = fopen("kolbe.txt", "r");
-    // outfile = fopen("output.txt", "w");
-    infile = fopen(argv[1], "r");
-    outfile = fopen(argv[2], "w");
+    infile = fopen("kolbe.txt", "r");
+    outfile = fopen("output.txt", "w");
+    // infile = fopen(argv[1], "r");
+    // outfile = fopen(argv[2], "w");
             
     if (!infile) {
       printf("Error: Cannot open file %s\n", argv[1]);
@@ -51,55 +53,72 @@ int main (int argc, char* argv[]){
     /* Do stuff with files */
     char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1, *lArg2, *lArg3, *lArg4;
     int parseRet;
-    int lineCount=-1;
-    do
-    {
-        parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-        if(parseRet==PSEUDO)
-            parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
-        if(parseRet==DONE)
-            return(-1);//some error
-    } while (parseRet!=ORIG);
-       
+    int lineCount=0;
+    // do
+    // {
+    //     parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
+    //     if(parseRet==PSEUDO)
+    //         parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
+    //      if(parseRet==DONE)
+    //          return(-1);//some error
+    // } while (parseRet!=ORIG);
+    
     //By here we have established a .orig
-    int lCount=lineCount;
-    do{
-        parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-        if(parseRet!=DONE && parseRet!=EMPTY_LINE && parseRet!=PSEUDO){
-            TableEntry t;
-            t.address=lineCount;
-            strcpy(t.label,lLabel);
-            symbolTable[lineCount]=t;
-            lCount+=2;
-            printf("OPCODE:%d\n", isOpcode(lOpcode));//DEBUG
-        }
-        if(parseRet==PSEUDO)
-            parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
-        if(parseRet==DONE)
-            return(-1);
-    }while (parseRet!=END);
+    int lCount=0;
+    // do{
+    //     parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
+    //     if( parseRet != DONE && parseRet != EMPTY_LINE ){
+    //         //DEBUG
+    //     }
+        // if(parseRet==PSEUDO)
+        //     parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
+        // if(parseRet==DONE)
+        //     return(-1);
+         
+    //}while (parseRet!=DONE);
+
+    do
+           {
+                parseRet = readAndParse( infile, lLine, &lLabel,
+                        &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4 );
+                if( parseRet != DONE && parseRet != EMPTY_LINE )
+                {
+                    TableEntry t;
+                    t.address=lineCount;
+                    strcpy(t.label,lLabel);
+                    symbolTable[lineCount]=t;
+                    lCount+=2;
+                    printf("OPCODE:%d\n", isOpcode(lOpcode));
+                }
+           } while( parseRet != DONE );
+        
     //now we have established a symbol table
+    //rewind(infile);
+    // do{
+    //     parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
+    //     if(parseRet==PSEUDO)
+    //         parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
+    //     if(parseRet==DONE)
+    //         return(-1);//some error
+    // } while (parseRet!=ORIG);
+    // lCount=lineCount;
+    // //time to decode instructions
+    lCount=0;
     rewind(infile);
     do{
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-        if(parseRet==PSEUDO)
-            parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
-        if(parseRet==DONE)
-            return(-1);//some error
-    } while (parseRet!=ORIG);
-    lCount=lineCount;
-    //time to decode instructions
-    do{
-        parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-        if(parseRet!=DONE && parseRet!=EMPTY_LINE && parseRet!=PSEUDO){
-            isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4);
+        if(parseRet!=DONE && parseRet!=EMPTY_LINE /*&& parseRet!=PSEUDO*/){
+            int check=isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4, lCount);
+            if(check!=-1)
+            printf("0x%x\n",check);
+        lCount+=2;
         }
-        if(parseRet==PSEUDO)
-            parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
-        if(parseRet==PSEUDO){
-            //.fill
-        }
-    }while (parseRet!=END);
+        // if(parseRet==PSEUDO)
+        //     parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
+        // if(parseRet==PSEUDO){
+        //     //.fill
+        //}
+    }while (parseRet!=DONE);
     
     fclose(infile);
     fclose(outfile);
@@ -107,66 +126,56 @@ int main (int argc, char* argv[]){
 
 int readAndParse( FILE * pInfile, char * pLine, char ** pLabel, char ** pOpcode, char ** pArg1, char ** pArg2, char ** pArg3, char ** pArg4)
 {
-    char * lRet, * lPtr;
-    int i;
-    if( !fgets( pLine, MAX_LINE_LENGTH, pInfile ) )
-        return( DONE );
-    for( i = 0; i < strlen( pLine ); i++ )
-        pLine[i] = tolower( pLine[i] );
-    /* convert entire line to lowercase */
-    *pLabel = *pOpcode = *pArg1 = *pArg2 = *pArg3 = *pArg4 = pLine + strlen(pLine);
+           char * lRet, * lPtr;
+           int i;
+           if( !fgets( pLine, MAX_LINE_LENGTH, pInfile ) )
+                return( DONE );
+           for( i = 0; i < strlen( pLine ); i++ )
+                pLine[i] = tolower( pLine[i] );
+          
+          /* convert entire line to lowercase */
+           *pLabel = *pOpcode = *pArg1 = *pArg2 = *pArg3 = *pArg4 = pLine + strlen(pLine);
 
-    /* ignore the comments */
-    lPtr = pLine;
+           /* ignore the comments */
+           lPtr = pLine;
 
-    while( *lPtr != ';' && *lPtr != '\0' && *lPtr != '\n' )
-        lPtr++;
+           while( *lPtr != ';' && *lPtr != '\0' &&
+           *lPtr != '\n' &&' ' )
+                lPtr++;
 
-    *lPtr = '\0';
-    if( !(lPtr = strtok( pLine, "\t\n ," ) ) )
-        return( EMPTY_LINE );
-    
-    //
-    if(lPtr[0]=='.'){
-        *pOpcode=lPtr;
-        if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) 
-            return( PSEUDO );
-        *pArg1 = lPtr;
-        return(PSEUDO);
-    }
-    //
+           *lPtr = '\0';
+           if( !(lPtr = strtok( pLine, "\t\n ," ) ) )
+                return( EMPTY_LINE );
 
-    if( isOpcode( lPtr ) == -1 && lPtr[0] != '.' ) /* found a label */
-    {
-        *pLabel = lPtr;
-        if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
-    }
-    if(pLine[0]=='.'){
-        *pOpcode = lPtr;
-        if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) 
-            return (PSEUDO);
-        *pArg1 = lPtr;
-        return (PSEUDO);
-    }
-    *pOpcode = lPtr;
+           if( isOpcode( lPtr ) == -1 && lPtr[0] != '.' ) /* found a label */
+           {
+                *pLabel = lPtr;
+                if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
+           }
+          
+          *pOpcode = lPtr;
 
-    if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
-    
-    *pArg1 = lPtr;
-    
-    if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
+           if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
+          
+          *pArg1 = lPtr;
+          
+          if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
 
-    *pArg2 = lPtr;
-    if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
+           *pArg2 = lPtr;
+           if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
 
-    *pArg3 = lPtr;
+           *pArg3 = lPtr;
 
-    if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
+           if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
+            
+           *pArg4 = lPtr;
 
-    *pArg4 = lPtr;
+        
+            // if(*pArg4[0]==' ');
+            // *pArg4[0]='\0';
 
-    return( OK );
-}
+           return( OK );
+        }
 int isOpcode(char * word){
     if(strcmp(word,"add")==0)
         return ADD;
@@ -192,6 +201,8 @@ int isOpcode(char * word){
         return NOT;
     if(strcmp(word,"ret")==0)
         return RET;
+    if(strcmp(word,"rti")==0)
+        return RTI;
     if(strcmp(word,"lshf")==0)
         return LSHF;
     if(strcmp(word,"rshfl")==0)
@@ -208,6 +219,9 @@ int isOpcode(char * word){
         return TRAP;
     if(strcmp(word,"xor")==0)
         return XOR;
+    if(word[0]=='b'&&word[1]=='r')
+        return brChecker(word);
+        
     
     return -1;
 }
@@ -223,7 +237,7 @@ int psuedoOp(char* word, char* arg, int* lCount){
     return PSEUDO;
 }
 
-int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4){
+int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4, int address){
     int ans=-1;
     
     if(isOpcode(word)==ADD||isOpcode(word)==AND||isOpcode(word)==XOR){
@@ -259,23 +273,61 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
             }
         }
     }
-    if(isOpcode(word)==BR||isOpcode(word)==JSR){
+    //need to finish with nzp
+       if(isOpcode(word)>=BRn&&isOpcode(word)<=BRnzp){
         if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
-            int i;
-            for(i=0;i<sizeof(symbolTable);i++){
-                if(strcmp(symbolTable[i].label,pArg1)==0)
-                    ans=1;
+            if(labelExists(pArg1)!=-1){
+                    int distance=(address-symbolTable[labelExists(pArg1)].address);
+                    if(distance>=-256&&distance<=255){
+                        ans=0x0800+distance;
+                        if(isOpcode(word)==BRn)
+                            ans+=0x800;
+                        if(isOpcode(word)==BRz)
+                            ans+=0x400;
+                        if(isOpcode(word)==BRp)
+                            ans+=0x200;
+                        if(isOpcode(word)==BR)
+                            ans+=0x000;
+                        if(isOpcode(word)==BRzp)
+                            ans+=0x600;
+                        if(isOpcode(word)==Bnp)
+                            ans+=0xA00;
+                        if(isOpcode(word)==BRnz)
+                            ans+=0xC00;
+                        if(isOpcode(word)==BRnzp)
+                            ans+=0xE00;
+                    }
+                }
+            }
+        }
+
+    if(isOpcode(word)==JSR){
+        if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
+            if(labelExists(pArg1)!=-1){
+                    int distance=(address-symbolTable[labelExists(pArg1)].address);
+                    if(distance>=-256&&distance<=255){
+                        ans=0x0800+distance;
+                    }
+                }
+            }
+        }
+    
+    //need to fix
+    if(isOpcode(word)==RET||isOpcode(word)==RTI){
+        if((strlen(pArg4)==0)&&(strlen(pArg1)==0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
+            if(isOpcode(word)==RET){
+                ans=0xC1C0;
+            }
+            if(isOpcode(word)==RTI){
+                ans=0x8000;
             }
         }
     }
-    if(isOpcode(word)==RET||isOpcode(word)==RTI){
-        if((strlen(pArg4)==0)&&(strlen(pArg1)==0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0))
-            ans=1;
-    }
     if(isOpcode(word)==JSRR){
         if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
-            if(((pArg1[0]=='r')&&((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)))
-                ans=1;
+            if(((pArg1[0]=='r')&&((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8))){
+                ans=0x4000+((pArg1[1] - '0')*64);
+            }
         }
     }
     if(isOpcode(word)==LDB||isOpcode(word)==LDW||isOpcode(word)==STB||isOpcode(word)==STW){
@@ -284,27 +336,82 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                 if(pArg1[0]=='r'&&pArg2[0]=='r')
                 {
                     if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
-                        if((toNum(pArg3)<32&&toNum(pArg3)>-33))
-                            ans=1;
+                        if((toNum(pArg3)<32&&toNum(pArg3)>-33)){
+                           if(isOpcode(word)==LDB){
+                               ans=0x2000;
+                           }
+                           if(isOpcode(word)==LDW){
+                               ans=0x6000;
+                           }
+                           if(isOpcode(word)==STB){
+                               ans=0x3000;
+                           }
+                           if(isOpcode(word)==STW){
+                               ans=0xE000;
+                           }
+                           int add=pArg1[1] - '0';
+                                add*=512;
+                                ans+=add;
+                            add=pArg2[1] - '0';
+                                add*=64;
+                                ans+=add;
+                            ans+=toNum(pArg3);
+                        }
                 }
             }
     }
     if(isOpcode(word)==LEA){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)>0)&&(strlen(pArg3)==0)){
             if(((pArg1[0]=='r')&&((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8))){
-                int i;
-                for(i=0;i<sizeof(symbolTable);i++){
-                    if(strcmp(symbolTable[i].label,pArg2)==0)
-                        ans=1;
+                if(labelExists(pArg1)!=-1){
+                        int distance=(address-symbolTable[labelExists(pArg1)].address);
+                        if(distance>=-256&&distance<=255){
+                            ans=0xE000+distance;
+                            int add=pArg1[1] - '0';
+                                add*=512;
+                                ans+=add;
+                        }
+                    }
                 }
             }
-        }
+        
     }
     if(isOpcode(word)==NOT){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)==0)){
             if(((pArg1[0]=='r')&&((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8))){
-                if(((pArg2[0]=='r')&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8)))
-                    ans=1;
+                if(((pArg2[0]=='r')&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))){
+                    ans=0x9000;
+                    int add=pArg1[1] - '0';
+                                add*=512;
+                                ans+=add;
+                            add=pArg2[1] - '0';
+                                add*=64;
+                                ans+=add;
+                    ans+=0x003F;
+                }
+            }
+        }
+    }
+    if(isOpcode(word)==LSHF||isOpcode(word)==RSHFL||isOpcode(word)==RSHFA){
+        if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)>0)){
+            if(pArg1[0]=='r'&&pArg2[0]=='r'){
+                if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
+                    if(((pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8))||(toNum(pArg3)<16&&toNum(pArg3)>=0)){
+                            ans=0x9000;
+                            int add=pArg1[1] - '0';
+                                add*=512;
+                                ans+=add;
+                            add=pArg2[1] - '0';
+                                add*=64;
+                                ans+=add;
+                                if(isOpcode(word)==RSHFL){
+                                  ans+=0x0020;
+                                }
+                                if(isOpcode(word)==RSHFA){
+                                  ans+=0x0060;
+                                }
+                                ans+=toNum(pArg3);
+                        }
             }
         }
     }
@@ -378,3 +485,32 @@ toNum( char * pStr )
   }
 }
 
+int labelExists(char* label){
+    int i;
+    int a=-1;
+    for(i=0;i<MAX_SYMBOLS;i++){
+        if(strcmp(symbolTable[i].label, label)==0)
+        a=i;
+    }
+    return a;
+}
+
+int brChecker(char* branch){
+        if(strcmp(branch, "br")==0)
+        return BR;
+        if(strcmp(branch, "brn")==0)
+        return BRn;
+        if(strcmp(branch, "brz")==0)
+        return BRz;
+        if(strcmp(branch, "brp")==0)
+        return BRp;
+        if(strcmp(branch, "brnp")==0)
+        return BRnp;
+        if(strcmp(branch, "brnz")==0)
+        return BRnz;
+        if(strcmp(branch, "bzp")==0)
+        return BRzp;
+        if(strcmp(branch, "brnzp")==0)
+        return BRnzp;
+    return -1;
+}
