@@ -273,8 +273,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
             }
         }
     }
-    //need to finish with nzp
-       if(isOpcode(word)>=BRn&&isOpcode(word)<=BRnzp){
+    if(isOpcode(word)>=BRn&&isOpcode(word)<=BRnzp){
         if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
             if(labelExists(pArg1)!=-1){
                     int distance=(address-symbolTable[labelExists(pArg1)].address);
@@ -290,7 +289,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                             ans+=0x000;
                         if(isOpcode(word)==BRzp)
                             ans+=0x600;
-                        if(isOpcode(word)==Bnp)
+                        if(isOpcode(word)==BRnp)
                             ans+=0xA00;
                         if(isOpcode(word)==BRnz)
                             ans+=0xC00;
