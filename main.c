@@ -170,10 +170,6 @@ int readAndParse( FILE * pInfile, char * pLine, char ** pLabel, char ** pOpcode,
             
            *pArg4 = lPtr;
 
-        
-            // if(*pArg4[0]==' ');
-            // *pArg4[0]='\0';
-
            return( OK );
         }
 int isOpcode(char * word){
@@ -222,7 +218,6 @@ int isOpcode(char * word){
     if(word[0]=='b'&&word[1]=='r')
         return brChecker(word);
         
-    
     return -1;
 }
 
