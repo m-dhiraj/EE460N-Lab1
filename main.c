@@ -54,64 +54,60 @@ int main (int argc, char* argv[]){
     char lLine[MAX_LINE_LENGTH + 1], *lLabel, *lOpcode, *lArg1, *lArg2, *lArg3, *lArg4;
     int parseRet;
     int lineCount=0;
-    // do
-    // {
-    //     parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-    //     if(parseRet==PSEUDO)
-    //         parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
-    //      if(parseRet==DONE)
-    //          return(-1);//some error
-    // } while (parseRet!=ORIG);
     
-    //By here we have established a .orig
-    int lCount=0;
-    // do{
-    //     parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-    //     if( parseRet != DONE && parseRet != EMPTY_LINE ){
-    //         //DEBUG
-    //     }
-        // if(parseRet==PSEUDO)
-        //     parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
-        // if(parseRet==DONE)
-        //     return(-1);
-         
-    //}while (parseRet!=DONE);
-
+    int findStart=1;
     do
-           {
-                parseRet = readAndParse( infile, lLine, &lLabel,
-                        &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4 );
-                if( parseRet != DONE && parseRet != EMPTY_LINE )
-                {
-                    TableEntry t;
-                    t.address=lineCount;
-                    strcpy(t.label,lLabel);
-                    symbolTable[lineCount]=t;
-                    lCount+=2;
-                    printf("OPCODE:%d\n", isOpcode(lOpcode));
-                }
-           } while( parseRet != DONE );
+    {
+        parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
+        if(strcmp(lOpcode,".orig")==0){
+            findStart=0;
+            printf("%d\n",toNum(lArg1));
+            //lineCount=toNum(lArg1);
+        }
+        if(strcmp(lOpcode,".end")==0)
+            return(-1);//error for .end before .orig
+        if(parseRet==DONE)
+            return(-1);//error for no .orig
+    } while (findStart);
+    //By here we have established a .orig
+    int lCount=lineCount;
+    do{
+        parseRet = readAndParse( infile, lLine, &lLabel,
+                &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4 );
+        if( parseRet != DONE && parseRet != EMPTY_LINE ){
+            TableEntry t;
+            t.address=lineCount;
+            strcpy(t.label,lLabel);
+            symbolTable[lineCount]=t;
+            lCount+=2;
+            printf("OPCODE:%d\n", isOpcode(lOpcode));
+        }
+    } while( parseRet != DONE );
         
     //now we have established a symbol table
-    //rewind(infile);
-    // do{
-    //     parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-    //     if(parseRet==PSEUDO)
-    //         parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
-    //     if(parseRet==DONE)
-    //         return(-1);//some error
-    // } while (parseRet!=ORIG);
-    // lCount=lineCount;
-    // //time to decode instructions
-    lCount=0;
     rewind(infile);
+    findStart=1;
+    do
+    {
+        parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
+        if(strcmp(lOpcode,".orig")==0){
+            findStart=0;
+        }
+        if(strcmp(lOpcode,".end")==0)
+            return(-1);//error for .end before .orig
+        if(parseRet==DONE)
+            return(-1);//error for no .orig
+    } while (findStart);
+    // //time to decode instructions
+    lCount=lineCount;
     do{
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-        if(parseRet!=DONE && parseRet!=EMPTY_LINE /*&& parseRet!=PSEUDO*/){
+        if(parseRet!=DONE && parseRet!=EMPTY_LINE){
+            //printf("Line:%d ",lCount);
             int check=isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4, lCount);
             if(check!=-1)
-            printf("0x%x\n",check);
-        lCount+=2;
+                printf("%#X\n",check);
+            lCount+=2;
         }
         // if(parseRet==PSEUDO)
         //     parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
@@ -217,7 +213,7 @@ int isOpcode(char * word){
         return XOR;
     if(word[0]=='b'&&word[1]=='r')
         return brChecker(word);
-        
+
     return -1;
 }
 
