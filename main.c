@@ -36,10 +36,10 @@ typedef struct {
 TableEntry symbolTable[MAX_SYMBOLS];
 
 int main (int argc, char* argv[]){
-    infile = fopen("kolbe.txt", "r");
-    outfile = fopen("output.txt", "w");
-    // infile = fopen(argv[1], "r");
-    // outfile = fopen(argv[2], "w");
+    //infile = fopen("kolbe.txt", "r");
+    //outfile = fopen("output.txt", "w");
+    infile = fopen(argv[1], "r");
+    outfile = fopen(argv[2], "w");
             
     if (!infile) {
       printf("Error: Cannot open file %s\n", argv[1]);
@@ -55,22 +55,23 @@ int main (int argc, char* argv[]){
     int parseRet;
     int lineCount=0;
     
-    int findStart=1;
+    int bool=1;
     do
     {
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(strcmp(lOpcode,".orig")==0){
-            findStart=0;
-            printf("%x\n",toNum(lArg1));
+            bool=0;
+            fprintf(outfile,"%#X\n",toNum(lArg1));
             //lineCount=toNum(lArg1);
         }
         if(strcmp(lOpcode,".end")==0)
             return(-1);//error for .end before .orig
         if(parseRet==DONE)
             return(-1);//error for no .orig
-    } while (findStart);
+    } while (bool);
     //By here we have established a .orig
     int lCount=lineCount;
+    bool=1;
     do{
         parseRet = readAndParse( infile, lLine, &lLabel,
                 &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4 );
@@ -80,38 +81,47 @@ int main (int argc, char* argv[]){
             strcpy(t.label,lLabel);
             symbolTable[lineCount]=t;
             lCount+=2;
-            printf("OPCODE:%d\n", isOpcode(lOpcode));
+            //printf("OPCODE:%d\n", isOpcode(lOpcode));
         }
-    } while( parseRet != DONE );
+        if(parseRet==DONE)
+            return(-1);//no .end
+        if(strcmp(lOpcode,".end")==0)
+            bool=0;
+    } while(bool);
         
     //now we have established a symbol table
     rewind(infile);
-    findStart=1;
+    bool=1;
     do
     {
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(strcmp(lOpcode,".orig")==0){
-            findStart=0;
+            bool=0;
         }
         if(strcmp(lOpcode,".end")==0)
             return(-1);//error for .end before .orig
         if(parseRet==DONE)
             return(-1);//error for no .orig
-    } while (findStart);
+    } while (bool);
     // //time to decode instructions
     rewind(infile);
 
     lCount=lineCount;
+    bool=1;
     do{
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(parseRet!=DONE && parseRet!=EMPTY_LINE){
             //printf("Line:%d ",lCount);
             int check=isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4, lCount);
             if(check!=-1)
-                printf("%#X\n",check);
+                fprintf(outfile,"%#X\n",check);
             lCount+=2;
         }
-    }while (parseRet!=DONE);
+        if(parseRet==DONE)
+            return(-1);//no .end
+        if(strcmp(lOpcode,".end")==0)
+            bool=0;
+    } while(bool);
     
     fclose(infile);
     fclose(outfile);
@@ -401,6 +411,9 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                         }
             }
         }
+    }
+    if(strcmp(word,".fill")==0){
+        ans=toNum(pArg1);
     }
     return ans;
    
