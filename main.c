@@ -55,22 +55,23 @@ int main (int argc, char* argv[]){
     int parseRet;
     int lineCount=0;
     
-    int findStart=1;
+    int bool=1;
     do
     {
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(strcmp(lOpcode,".orig")==0){
-            findStart=0;
-            printf("%d\n",toNum(lArg1));
+            bool=0;
+            printf("%#X\n",toNum(lArg1));
             //lineCount=toNum(lArg1);
         }
         if(strcmp(lOpcode,".end")==0)
             return(-1);//error for .end before .orig
         if(parseRet==DONE)
             return(-1);//error for no .orig
-    } while (findStart);
+    } while (bool);
     //By here we have established a .orig
     int lCount=lineCount;
+    bool=1;
     do{
         parseRet = readAndParse( infile, lLine, &lLabel,
                 &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4 );
@@ -82,24 +83,29 @@ int main (int argc, char* argv[]){
             lCount+=2;
             printf("OPCODE:%d\n", isOpcode(lOpcode));
         }
-    } while( parseRet != DONE );
+        if(parseRet==DONE)
+            return(-1);//no .end
+        if(strcmp(lOpcode,".end")==0)
+            bool=0;
+    } while(bool);
         
     //now we have established a symbol table
     rewind(infile);
-    findStart=1;
+    bool=1;
     do
     {
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(strcmp(lOpcode,".orig")==0){
-            findStart=0;
+            bool=0;
         }
         if(strcmp(lOpcode,".end")==0)
             return(-1);//error for .end before .orig
         if(parseRet==DONE)
             return(-1);//error for no .orig
-    } while (findStart);
+    } while (bool);
     // //time to decode instructions
     lCount=lineCount;
+    bool=1;
     do{
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(parseRet!=DONE && parseRet!=EMPTY_LINE){
@@ -109,12 +115,11 @@ int main (int argc, char* argv[]){
                 printf("%#X\n",check);
             lCount+=2;
         }
-        // if(parseRet==PSEUDO)
-        //     parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
-        // if(parseRet==PSEUDO){
-        //     //.fill
-        //}
-    }while (parseRet!=DONE);
+        if(parseRet==DONE)
+            return(-1);//no .end
+        if(strcmp(lOpcode,".end")==0)
+            bool=0;
+    } while(bool);
     
     fclose(infile);
     fclose(outfile);
@@ -404,6 +409,9 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                         }
             }
         }
+    }
+    if(strcmp(word,".fill")==0){
+        ans=toNum(pArg1);
     }
     return ans;
    
