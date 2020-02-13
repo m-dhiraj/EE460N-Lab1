@@ -61,7 +61,7 @@ int main (int argc, char* argv[]){
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(strcmp(lOpcode,".orig")==0){
             findStart=0;
-            printf("%d\n",toNum(lArg1));
+            printf("%x\n",toNum(lArg1));
             //lineCount=toNum(lArg1);
         }
         if(strcmp(lOpcode,".end")==0)
@@ -74,7 +74,7 @@ int main (int argc, char* argv[]){
     do{
         parseRet = readAndParse( infile, lLine, &lLabel,
                 &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4 );
-        if( parseRet != DONE && parseRet != EMPTY_LINE ){
+        if( parseRet != DONE && parseRet != EMPTY_LINE){//do &&
             TableEntry t;
             t.address=lineCount;
             strcpy(t.label,lLabel);
@@ -99,6 +99,8 @@ int main (int argc, char* argv[]){
             return(-1);//error for no .orig
     } while (findStart);
     // //time to decode instructions
+    rewind(infile);
+
     lCount=lineCount;
     do{
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
@@ -109,11 +111,6 @@ int main (int argc, char* argv[]){
                 printf("%#X\n",check);
             lCount+=2;
         }
-        // if(parseRet==PSEUDO)
-        //     parseRet=psuedoOp(lOpcode,lArg1,&lineCount);
-        // if(parseRet==PSEUDO){
-        //     //.fill
-        //}
     }while (parseRet!=DONE);
     
     fclose(infile);

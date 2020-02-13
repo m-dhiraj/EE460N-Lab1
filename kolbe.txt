@@ -1,4 +1,4 @@
-.orig
+.orig x3000
 RTI
 RET 
 JSRR r3
