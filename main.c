@@ -36,10 +36,10 @@ typedef struct {
 TableEntry symbolTable[MAX_SYMBOLS];
 
 int main (int argc, char* argv[]){
-    infile = fopen("kolbe.txt", "r");
-    outfile = fopen("output.txt", "w");
-    // infile = fopen(argv[1], "r");
-    // outfile = fopen(argv[2], "w");
+    //infile = fopen("kolbe.txt", "r");
+    //outfile = fopen("output.txt", "w");
+    infile = fopen(argv[1], "r");
+    outfile = fopen(argv[2], "w");
             
     if (!infile) {
       printf("Error: Cannot open file %s\n", argv[1]);
@@ -61,7 +61,7 @@ int main (int argc, char* argv[]){
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(strcmp(lOpcode,".orig")==0){
             bool=0;
-            printf("%#X\n",toNum(lArg1));
+            fprintf(outfile,"%#X\n",toNum(lArg1));
             //lineCount=toNum(lArg1);
         }
         if(strcmp(lOpcode,".end")==0)
@@ -81,7 +81,7 @@ int main (int argc, char* argv[]){
             strcpy(t.label,lLabel);
             symbolTable[lineCount]=t;
             lCount+=2;
-            printf("OPCODE:%d\n", isOpcode(lOpcode));
+            //printf("OPCODE:%d\n", isOpcode(lOpcode));
         }
         if(parseRet==DONE)
             return(-1);//no .end
@@ -112,7 +112,7 @@ int main (int argc, char* argv[]){
             //printf("Line:%d ",lCount);
             int check=isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4, lCount);
             if(check!=-1)
-                printf("%#X\n",check);
+                fprintf(outfile,"%#X\n",check);
             lCount+=2;
         }
         if(parseRet==DONE)
