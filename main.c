@@ -218,6 +218,8 @@ int isOpcode(char * word){
         return TRAP;
     if(strcmp(word,"xor")==0)
         return XOR;
+    if(strcmp(word, "trap")==0||strcmp(word, "halt")==0)
+        return TRAP;
     if(word[0]=='b'&&word[1]=='r')
         return brChecker(word);
 
@@ -237,7 +239,19 @@ int psuedoOp(char* word, char* arg, int* lCount){
 
 int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4, int address){
     int ans=-1;
-    
+    if(isOpcode(word)==HALT){
+        if(strcmp(word, "halt")){
+            if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
+                if(toNum(pArg1)==0x25){
+                    ans= 0xf025;
+                }
+            }
+            else if((strlen(pArg4)==0)&&(strlen(pArg1)==0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
+                ans= 0xf025;
+            }
+        }
+        
+    }
     if(isOpcode(word)==ADD||isOpcode(word)==AND||isOpcode(word)==XOR){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)>0)){
             if(pArg1[0]=='r'&&pArg2[0]=='r'){
