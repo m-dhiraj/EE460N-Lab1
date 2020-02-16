@@ -55,33 +55,50 @@ int main (int argc, char* argv[]){
     int parseRet;
     int lineCount=0;
     
-    int bool=1;
+    int count=0;
     do
     {
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-        if(strcmp(lOpcode,".orig")==0){
-            bool=0;
-            fprintf(outfile,"%#X\n",toNum(lArg1));
+        if(strcmp(lOpcode,".orig")==0||strcmp(lLabel,".orig")==0){
+            count+=1;
+            if(count==1)
+            fprintf(outfile,"%#4X\n",toNum(lArg1));
+            if(count==2){
+                printf("error 1\n");
+                exit(1);
+            }
+            
             //lineCount=toNum(lArg1);
         }
         if(strcmp(lOpcode,".end")==0)
             return(-1);//error for .end before .orig
         if(parseRet==DONE)
             return(-1);//error for no .orig
-    } while (bool);
+    } while (count==0);
     //By here we have established a .orig
     int lCount=lineCount;
-    bool=1;
+    int bool=1;
+    int lIndex=0;
     do{
         parseRet = readAndParse( infile, lLine, &lLabel,
                 &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4 );
-        if( parseRet != DONE && parseRet != EMPTY_LINE){//do &&
+        if( parseRet != DONE && parseRet != EMPTY_LINE ){//do &&
+            if(strlen(lLabel)>0){
+            
+            
+            strcpy(symbolTable[lIndex].label,lLabel);
+            
             TableEntry t;
-            t.address=lineCount;
+            t.address=lCount;
             strcpy(t.label,lLabel);
-            symbolTable[lineCount]=t;
+            //printf("%d \n",lCount);
+            //printf("%s, %d \n",symbolTable[lIndex].label, symbolTable[lIndex].address);
+            //symbolTable[lIndex]=t;
+            symbolTable[lIndex].address=lCount;
+            lIndex++;
+            }
             lCount+=2;
-            //printf("OPCODE:%d\n", isOpcode(lOpcode));
+
         }
         if(parseRet==DONE)
             return(-1);//no .end
@@ -90,6 +107,8 @@ int main (int argc, char* argv[]){
     } while(bool);
         
     //now we have established a symbol table
+    int i;
+  
     rewind(infile);
     bool=1;
     do
@@ -113,8 +132,13 @@ int main (int argc, char* argv[]){
         if(parseRet!=DONE && parseRet!=EMPTY_LINE){
             //printf("Line:%d ",lCount);
             int check=isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4, lCount);
-            if(check!=-1)
-                fprintf(outfile,"%#X\n",check);
+            if(check!=0xa000)
+                fprintf(outfile,"0x%04X\n",check);
+            else
+            {
+                exit(2);
+            }
+            
             lCount+=2;
         }
         if(parseRet==DONE)
@@ -143,7 +167,7 @@ int readAndParse( FILE * pInfile, char * pLine, char ** pLabel, char ** pOpcode,
            lPtr = pLine;
 
            while( *lPtr != ';' && *lPtr != '\0' &&
-           *lPtr != '\n' &&' ' )
+           *lPtr != '\n' )
                 lPtr++;
 
            *lPtr = '\0';
@@ -180,8 +204,7 @@ int isOpcode(char * word){
         return ADD;
     if(strcmp(word,"and")==0)
         return AND;
-    if(strcmp(word,"halt")==0)
-        return HALT;
+    
     if(strcmp(word,"jmp")==0)
         return JMP;
     if(strcmp(word,"jsr")==0)
@@ -220,8 +243,9 @@ int isOpcode(char * word){
         return XOR;
     if(strcmp(word, "trap")==0||strcmp(word, "halt")==0)
         return TRAP;
-    if(word[0]=='b'&&word[1]=='r')
-        return brChecker(word);
+    if(word[0]=='b'&&word[1]=='r'){
+        
+        return brChecker(word);}
 
     return -1;
 }
@@ -238,17 +262,20 @@ int psuedoOp(char* word, char* arg, int* lCount){
 }
 
 int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4, int address){
-    int ans=-1;
-    if(isOpcode(word)==HALT){
-        if(strcmp(word, "halt")){
-            if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
-                if(toNum(pArg1)==0x25){
+    int ans=0xa000;
+    
+    if(isOpcode(word)==TRAP){ 
+        {
+            if((strlen(pArg4)==0)&&(strlen(pArg1)==0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
                     ans= 0xf025;
-                }
+                   
             }
-            else if((strlen(pArg4)==0)&&(strlen(pArg1)==0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
+            else if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
+                if(toNum(pArg1)==0x25)
                 ans= 0xf025;
             }
+             else
+             exit(4);
         }
         
     }
@@ -277,39 +304,60 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                                    ans+=add;
                                 }
                             else{
-                                    ans+=0x0020;
+                                    //ans+=0x0020;
                                     ans+=toNum(pArg3);
+                                    
+                                    //printf("%x\n", toNum(pArg3));
+                                    if(toNum(pArg3)<0)
+                                    ans+=0x0040;
                                 }
                             
                         }
+                        else if(!(toNum(pArg3)<16&&toNum(pArg3)>-17)){
+                            exit(3);
+                        }
             }
+           
         }
+         else
+        exit(4);
     }
-    if(isOpcode(word)>=BRn&&isOpcode(word)<=BRnzp){
+    if(isOpcode(word)==BRn||isOpcode(word)==BRz||isOpcode(word)==BRp||isOpcode(word)==BR||isOpcode(word)==BRzp||isOpcode(word)==BRnp||isOpcode(word)==BRnz||isOpcode(word)==BRnzp){
         if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
             if(labelExists(pArg1)!=-1){
-                    int distance=(address-symbolTable[labelExists(pArg1)].address);
-                    if(distance>=-256&&distance<=255){
-                        ans=0x0800+distance;
-                        if(isOpcode(word)==BRn)
-                            ans+=0x800;
-                        if(isOpcode(word)==BRz)
+                    //address-=6;
+                    //int distance=(symbolTable[labelExists(pArg1)].address-address);
+                    int distance=(symbolTable[labelExists(pArg1)].address-address)/2;
+                        printf(" %d ",distance);
+                        if(distance>= -256&&distance<=255){
+                             if(distance<0)
+                             distance+=0x200;
+                        ans=0;
+                        ans+=distance;
+                        //printf("%X %d,",distance, distance);
+                        if(isOpcode(word)==BRn){
+                            
+                            ans+=0x800;}
+                        else if(isOpcode(word)==BRz)
                             ans+=0x400;
-                        if(isOpcode(word)==BRp)
+                        else if(isOpcode(word)==BRp)
                             ans+=0x200;
-                        if(isOpcode(word)==BR)
-                            ans+=0x000;
-                        if(isOpcode(word)==BRzp)
-                            ans+=0x600;
-                        if(isOpcode(word)==BRnp)
-                            ans+=0xA00;
-                        if(isOpcode(word)==BRnz)
-                            ans+=0xC00;
-                        if(isOpcode(word)==BRnzp)
+                        else if(isOpcode(word)==BR)
                             ans+=0xE00;
+                        else if(isOpcode(word)==BRzp)
+                            ans+=0x600;
+                        else if(isOpcode(word)==BRnp)
+                            ans+=0xA00;
+                        else if(isOpcode(word)==BRnz)
+                            ans+=0xC00;
+                        else if(isOpcode(word)==BRnzp)
+                            ans+=0xE00;
+                        return ans;
                     }
                 }
             }
+            else
+        exit(4);
         }
 
     if(isOpcode(word)==JSR){
@@ -333,6 +381,8 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                 ans=0x8000;
             }
         }
+        else
+        exit(4);
     }
     if(isOpcode(word)==JSRR){
         if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
@@ -340,10 +390,12 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                 ans=0x4000+((pArg1[1] - '0')*64);
             }
         }
+        else
+        exit(4);
     }
     if(isOpcode(word)==LDB||isOpcode(word)==LDW||isOpcode(word)==STB||isOpcode(word)==STW){
          if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)>0))
-            {
+            {printf("ehll");
                 if(pArg1[0]=='r'&&pArg2[0]=='r')
                 {
                     if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
@@ -352,6 +404,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                                ans=0x2000;
                            }
                            if(isOpcode(word)==LDW){
+                               
                                ans=0x6000;
                            }
                            if(isOpcode(word)==STB){
@@ -367,16 +420,27 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                                 add*=64;
                                 ans+=add;
                             ans+=toNum(pArg3);
+                            if(toNum(pArg3)<0)
+                            ans+=0x0080;
+                        }
+                        else {
+                            exit(3);
                         }
                 }
             }
+            else
+        exit(4);
     }
     if(isOpcode(word)==LEA){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)>0)&&(strlen(pArg3)==0)){
             if(((pArg1[0]=='r')&&((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8))){
-                if(labelExists(pArg1)!=-1){
-                        int distance=(address-symbolTable[labelExists(pArg1)].address);
-                        if(distance>=-256&&distance<=255){
+                if(labelExists(pArg2)!=-1){
+                        int distance=(symbolTable[labelExists(pArg2)].address-address)/2;
+                        //printf("%d",distance);
+                        if(distance>= -256&&distance<=255){
+                             if(distance<0)
+                             distance+=0x80;
+                            
                             ans=0xE000+distance;
                             int add=pArg1[1] - '0';
                                 add*=512;
@@ -385,6 +449,8 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                     }
                 }
             }
+            else
+        exit(4);
         
     }
     if(isOpcode(word)==NOT){
@@ -402,6 +468,8 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                 }
             }
         }
+        else
+        exit(4);
     }
     if(isOpcode(word)==LSHF||isOpcode(word)==RSHFL||isOpcode(word)==RSHFA){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)>0)){
@@ -422,9 +490,17 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                                   ans+=0x0060;
                                 }
                                 ans+=toNum(pArg3);
+                                if(toNum(pArg3)<0)
+                                ans+=0x0040;
+                        }
+                        else if(!(toNum(pArg3)<16&&toNum(pArg3)>0)){
+                            exit(3);
                         }
             }
         }
+        else
+        exit(4);
+
     }
     if(strcmp(word,".fill")==0){
         ans=toNum(pArg1);
@@ -433,6 +509,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
    
 }
 
+int
 toNum( char * pStr )
 {
   char * t_ptr;
@@ -501,11 +578,17 @@ toNum( char * pStr )
 
 int labelExists(char* label){
     int i;
+    
     int a=-1;
     for(i=0;i<MAX_SYMBOLS;i++){
+        if(strlen(symbolTable[i].label)>0){
         if(strcmp(symbolTable[i].label, label)==0)
         a=i;
+        //printf("%s %d\n", symbolTable[i].label,symbolTable[i].address );
+        }
     }
+    if(a==-1)
+    exit(1);
     return a;
 }
 
