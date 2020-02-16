@@ -1,3 +1,10 @@
+/*
+	Name 1: Dhiraj Manukonda
+	Name 2: Kolbe Bauer 
+	UTEID 1: DM48254
+	UTEID 2: KB37324 
+*/
+
 #include <stdio.h> /* standard input/output library */
 #include <stdlib.h> /* Standard C Library */
 #include <string.h> /* String operations library */
@@ -84,6 +91,8 @@ int main (int argc, char* argv[]){
         parseRet = readAndParse( infile, lLine, &lLabel,
                 &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4 );
         if( parseRet != DONE && parseRet != EMPTY_LINE ){//do &&
+            if(lOpcode[0]=='.'&&strcmp(lOpcode, ".orig")!=0&&strcmp(lOpcode, ".fill")!=0&&strcmp(lOpcode, ".end")!=0)
+            exit(1);
             if(strcmp(lOpcode,".orig")==0){
                 //printf("error 1\n");
                 exit(1);
@@ -92,8 +101,14 @@ int main (int argc, char* argv[]){
                 exit(1);
             }
             if(strlen(lLabel)>0){
-            
-            
+            int lInd=0;
+            for(lInd=0;lInd<strlen(lLabel);lInd++){
+                if(isalnum(lLabel[lInd])==0){
+                    exit(5);
+                }
+            }
+            if(lLabel[0]=='x'||isdigit(lLabel[0])==1)
+            exit(4);
             strcpy(symbolTable[lIndex].label,lLabel);
             
             TableEntry t;
@@ -109,7 +124,7 @@ int main (int argc, char* argv[]){
 
         }
         if(parseRet==DONE)
-            return(-1);//no .end
+            exit(4);//no .end
         if(strcmp(lOpcode,".end")==0)
             bool=0;
     } while(bool);
@@ -196,7 +211,7 @@ int readAndParse( FILE * pInfile, char * pLine, char ** pLabel, char ** pOpcode,
            }
           
           *pOpcode = lPtr;
-
+          
            if( !( lPtr = strtok( NULL, "\t\n ," ) ) ) return( OK );
           
           *pArg1 = lPtr;
@@ -300,8 +315,14 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                    
             }
             else if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
-                if(toNum(pArg1)==0x25)
-                ans= 0xf025;
+                ans= 0xf000;
+                if(toNum(pArg1)>0)
+                ans+=toNum(pArg1);
+                else
+                {
+                    exit(3);
+                }
+                
             }
              else
              exit(4);
@@ -310,6 +331,8 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
     }
     if(isOpcode(word)==ADD||isOpcode(word)==AND||isOpcode(word)==XOR){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)>0)){
+            if((pArg1[0]!='r'||pArg2[0]!='r'))
+            exit(4);
             if(pArg1[0]=='r'&&pArg2[0]=='r'){
                 if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8)){
                     if(((pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8))||(toNum(pArg3)<16&&toNum(pArg3)>-17)){
@@ -352,6 +375,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                         }
                         
             }
+           
            
         }
          else
@@ -523,6 +547,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                                 ans+=add;
                         }
                     }
+                    else
                     exit(1);
                 }
                 else
@@ -565,7 +590,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
             if(pArg1[0]=='r'&&pArg2[0]=='r'){
                 if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
                     if(((pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8))||(toNum(pArg3)<16&&toNum(pArg3)>=0)){
-                            ans=0x9000;
+                            ans=0xd000;
                             int add=pArg1[1] - '0';
                                 add*=512;
                                 ans+=add;
@@ -573,10 +598,10 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                                 add*=64;
                                 ans+=add;
                                 if(isOpcode(word)==RSHFL){
-                                  ans+=0x0020;
+                                  ans+=0x0010;
                                 }
                                 if(isOpcode(word)==RSHFA){
-                                  ans+=0x0060;
+                                  ans+=0x0030;
                                 }
                                 ans+=toNum(pArg3);
                                 if(toNum(pArg3)<0)
@@ -589,8 +614,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
         }
         else
         exit(4);
-        if(!(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8)&&(pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8)))
-            exit(4);
+        
     }
     if(strcmp(word,".fill")==0){
         ans=toNum(pArg1);
@@ -697,7 +721,7 @@ int brChecker(char* branch){
         return BRnp;
         if(strcmp(branch, "brnz")==0)
         return BRnz;
-        if(strcmp(branch, "bzp")==0)
+        if(strcmp(branch, "brzp")==0)
         return BRzp;
         if(strcmp(branch, "brnzp")==0)
         return BRnzp;

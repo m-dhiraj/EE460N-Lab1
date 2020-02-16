@@ -9,5 +9,5 @@ loop ldb r2 r1 #0
      add r0 r0 #-1
      brp loop
      HALT
-loc .FILL	0x3500
+loc .FILL	x3500
 .END
