@@ -100,7 +100,7 @@ int main (int argc, char* argv[]){
             t.address=lCount;
             strcpy(t.label,lLabel);
             //printf("%d \n",lCount);
-            printf("%s, %d \n",symbolTable[lIndex].label, symbolTable[lIndex].address);
+            //printf("%s, %d \n",symbolTable[lIndex].label, symbolTable[lIndex].address);
             //symbolTable[lIndex]=t;
             symbolTable[lIndex].address=lCount;
             lIndex++;
@@ -143,7 +143,7 @@ int main (int argc, char* argv[]){
                 exit(1);
             }
             int check=isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4, lCount);
-            if(strlen(lOpcode)>0){
+            {
             if(check!=0xa000 ){
                 if(check!=0xa100)
                 fprintf(outfile,"0x%04X\n",check);
@@ -388,6 +388,11 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                         return ans;
                     }
                 }
+                else
+                {
+                    exit(1);
+                }
+                
             }
             else
         exit(4);
@@ -404,6 +409,11 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                         ans+=0x4000;
                     }
                 }
+                else
+                {
+                    exit(1);
+                }
+                
             }
             else
             {
@@ -511,6 +521,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                                 ans+=add;
                         }
                     }
+                    exit(1);
                 }
                 else
                 {
