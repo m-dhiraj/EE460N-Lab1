@@ -1,14 +1,12 @@
-dhiraj.ORIG x3000
-add add R2, r3, r5
-jsr #30
-YASH AND r3, R6, #10
-and R5,R3,  #6
-jsr yash
-jmP r6
-LDB R5, R0, #15
-LDW R7, r2, #20
-TRAP x25
-HALT
-.FILL x000A
-.end
-harish
+.ORIG #4096
+A	LEA R1, Y
+	LDW R1, R1, #0
+	LDW R1, R1, #0
+	ADD R1, R1, R1
+	ADD R1, R1, x-10	;x-10 is the negative of x10
+	BRN A
+	HALT
+Y	.FILL #263
+	.FILL #13
+	.FILL #6
+	.END

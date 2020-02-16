@@ -413,6 +413,8 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                             ans+=0xE00;
                         return ans;
                     }
+                    else 
+                    exit(4);
                 }
                 else
                 {
@@ -434,6 +436,11 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                         ans=0x0800+distance;
                         ans+=0x4000;
                     }
+                    else
+                    {
+                        exit(4);
+                    }
+                    
                 }
                 else
                 {
@@ -546,6 +553,8 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                                 add*=512;
                                 ans+=add;
                         }
+                        else
+                        exit(4);
                     }
                     else
                     exit(1);
