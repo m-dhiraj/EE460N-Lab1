@@ -59,14 +59,11 @@ int main (int argc, char* argv[]){
     do
     {
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
-        if(strcmp(lOpcode,".orig")==0||strcmp(lLabel,".orig")==0){
+           
+            if(strcmp(lOpcode,".orig")==0){
             count+=1;
             if(count==1 && toNum(lArg1)%2==0){
             fprintf(outfile,"%#4X\n",toNum(lArg1));
-            }
-            else if(count==2){
-                //printf("error 1\n");
-                exit(1);
             }
             else if(toNum(lArg1)%2!=0){
                 exit(3);
@@ -75,9 +72,9 @@ int main (int argc, char* argv[]){
             //lineCount=toNum(lArg1);
         }
         if(strcmp(lOpcode,".end")==0)
-            return(-1);//error for .end before .orig
+            exit(4);//error for .end before .orig
         if(parseRet==DONE)
-            return(-1);//error for no .orig
+            exit(4);//error for no .orig
     } while (count==0);
     //By here we have established a .orig
     int lCount=lineCount;
@@ -87,8 +84,11 @@ int main (int argc, char* argv[]){
         parseRet = readAndParse( infile, lLine, &lLabel,
                 &lOpcode, &lArg1, &lArg2, &lArg3, &lArg4 );
         if( parseRet != DONE && parseRet != EMPTY_LINE ){//do &&
+            if(strcmp(lOpcode,".orig")==0){
+                //printf("error 1\n");
+                exit(1);
+            }
             if(labelExists(lLabel)!=-1){
-                printf(lLine);
                 exit(1);
             }
             if(strlen(lLabel)>0){
@@ -140,17 +140,17 @@ int main (int argc, char* argv[]){
         if(parseRet!=DONE && parseRet!=EMPTY_LINE){
             //printf("Line:%d ",lCount);
             int check=isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4, lCount);
-            if(check!=0xa000){
+            if(strlen(lOpcode)>0){
+            if(check!=0xa000 ){
                 if(check!=0xa100)
                 fprintf(outfile,"0x%04X\n",check);
             }
             else
             {
-                printf(" %s",lLine);
                 exit(2);
 
             }
-            
+        }
             lCount+=2;
         }
         if(parseRet==DONE)
@@ -275,6 +275,17 @@ int psuedoOp(char* word, char* arg, int* lCount){
 
 int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4, int address){
     int ans=0xa000;
+    if(isOpcode(word)==NOP){
+        if((strlen(pArg4)==0)&&(strlen(pArg1)==0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
+            ans=0x0000;
+        }
+        else
+        {
+            exit(4);
+        }
+        
+    }
+    
     if(strcmp(word, ".orig")==0||strcmp(word, ".end")==0)
     return 0xa100;
     if(isOpcode(word)==TRAP){ 
@@ -295,7 +306,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
     if(isOpcode(word)==ADD||isOpcode(word)==AND||isOpcode(word)==XOR){
         if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)>0)){
             if(pArg1[0]=='r'&&pArg2[0]=='r'){
-                if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
+                if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8)){
                     if(((pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8))||(toNum(pArg3)<16&&toNum(pArg3)>-17)){
                             if(isOpcode(word)==ADD){
                                 ans=0x1000;
@@ -322,13 +333,19 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                                     
                                     //printf("%x\n", toNum(pArg3));
                                     if(toNum(pArg3)<0)
-                                    ans+=0x0040;
+                                    ans+=0x0020;
                                 }
                             
                         }
                         else if(!(toNum(pArg3)<16&&toNum(pArg3)>-17)){
                             exit(3);
                         }
+                        }
+                        else
+                        {
+                            exit(4);
+                        }
+                        
             }
            
         }
@@ -376,7 +393,6 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
     if(isOpcode(word)==JSR){
         if((strlen(pArg4)==0)&&(strlen(pArg1)>0)&&(strlen(pArg2)==0)&&(strlen(pArg3)==0)){
             if(labelExists(pArg1)!=-1){
-                printf("hi");
                     int distance=(symbolTable[labelExists(pArg1)].address-address)/2;
                     if(distance>=-256&&distance<=255){
                         if(distance<0)
@@ -437,7 +453,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
             {//printf("ehll");
                 if(pArg1[0]=='r'&&pArg2[0]=='r')
                 {
-                    if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
+                    if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8)){
                         if((toNum(pArg3)<32&&toNum(pArg3)>-33)){
                            if(isOpcode(word)==LDB){
                                ans=0x2000;
@@ -466,6 +482,12 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                             exit(3);
                         }
                 }
+                else
+                {
+                    exit(4);
+                }
+                
+                }
             }
             else
         exit(4);
@@ -487,6 +509,11 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                         }
                     }
                 }
+                else
+                {
+                    exit(4);
+                }
+                
             }
             else
         exit(4);
@@ -505,7 +532,14 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                                 ans+=add;
                     ans+=0x003F;
                 }
+                else
+                {
+                    exit(4);
+                }
+                
             }
+            else
+                exit(4);
         }
         else
         exit(4);
@@ -539,7 +573,8 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
         }
         else
         exit(4);
-
+        if(!(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8)&&(pArg3[0]=='r')&&((pArg3[1] - '0')>=0)&&((pArg3[1] - '0')<8)))
+            exit(4);
     }
     if(strcmp(word,".fill")==0){
         ans=toNum(pArg1);
