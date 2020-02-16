@@ -139,6 +139,9 @@ int main (int argc, char* argv[]){
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(parseRet!=DONE && parseRet!=EMPTY_LINE){
             //printf("Line:%d ",lCount);
+            if(isOpcode(lOpcode)!=-1&&isOpcode(lArg1)!=-1){
+                exit(1);
+            }
             int check=isValidOp(lOpcode, lArg1, lArg2, lArg3, lArg4, lCount);
             if(strlen(lOpcode)>0){
             if(check!=0xa000 ){
