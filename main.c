@@ -61,11 +61,15 @@ int main (int argc, char* argv[]){
         parseRet=readAndParse(infile,lLine,&lLabel,&lOpcode,&lArg1,&lArg2,&lArg3,&lArg4);
         if(strcmp(lOpcode,".orig")==0||strcmp(lLabel,".orig")==0){
             count+=1;
-            if(count==1)
+            if(count==1 && toNum(lArg1)%2==0){
             fprintf(outfile,"%#4X\n",toNum(lArg1));
-            if(count==2){
+            }
+            else if(count==2){
                 //printf("error 1\n");
                 exit(1);
+            }
+            else if(toNum(lArg1)%2!=0){
+                exit(3);
             }
             
             //lineCount=toNum(lArg1);
