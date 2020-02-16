@@ -64,7 +64,7 @@ int main (int argc, char* argv[]){
             if(count==1)
             fprintf(outfile,"%#4X\n",toNum(lArg1));
             if(count==2){
-                printf("error 1\n");
+                //printf("error 1\n");
                 exit(1);
             }
             
@@ -328,7 +328,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
                     //address-=6;
                     //int distance=(symbolTable[labelExists(pArg1)].address-address);
                     int distance=(symbolTable[labelExists(pArg1)].address-address)/2;
-                        printf(" %d ",distance);
+                        //printf(" %d ",distance);
                         if(distance>= -256&&distance<=255){
                              if(distance<0)
                              distance+=0x200;
@@ -395,7 +395,7 @@ int isValidOp(char* word, char * pArg1, char * pArg2, char * pArg3, char * pArg4
     }
     if(isOpcode(word)==LDB||isOpcode(word)==LDW||isOpcode(word)==STB||isOpcode(word)==STW){
          if((strlen(pArg4)==0)&&(strlen(pArg1)==2)&&(strlen(pArg2)==2)&&(strlen(pArg3)>0))
-            {printf("ehll");
+            {//printf("ehll");
                 if(pArg1[0]=='r'&&pArg2[0]=='r')
                 {
                     if(((pArg1[1] - '0')>=0)&&((pArg1[1] - '0')<8)&&((pArg2[1] - '0')>=0)&&((pArg2[1] - '0')<8))
